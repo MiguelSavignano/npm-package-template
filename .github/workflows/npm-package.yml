@@ -11,29 +11,35 @@ on:
       - v*
 
 jobs:
-  build-test:
+  build-test-matrix:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [10, 12, 14, 16, 18]
 
     steps:
       - uses: actions/checkout@v1
 
-      - name: Set up Nodejs 10.16.3
+      - name: Set up Nodejs  ${{ matrix.version }}
         uses: actions/setup-node@master
         with:
-          version: 10.16.3
-
-      - name: Install
+          node-version: ${{ matrix.version }}
+      - name: Build
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Test
+        run: npm test
 
-      # - name: Test
-      #   run: npm test
+      - uses: IgnusG/jest-report-action@v2.3.3
+        if: always()
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          check-name: Jest test with node-version ${{ matrix.version }}
+
 
   deploy:
     if: contains(github.ref, 'refs/tags/v')
-    needs: build-test
+    needs: build-test-matrix
     runs-on: ubuntu-latest
 
     steps:
